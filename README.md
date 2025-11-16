@@ -19,8 +19,8 @@ The platform uses WebRTC Voice Activity Detection (VAD) and pitch analysis to un
 
 **Eligible Individuals on the Team:**
 
-- **Bao Nguyen** - Email: [Please add email address]
-- **Giap Nguyen** - Email: [Please add email address]
+- **Bao Nguyen** - Email: nnbao04@gmail.com
+- **Giap Nguyen** - Email: giapnguyen@gmail.com
 
 ## 🚀 Setup Instructions from Scratch
 
@@ -182,7 +182,6 @@ npm run preview
 - `←` / `↑` - Navigate to previous page
 - `→` / `↓` - Navigate to next page
 - `Enter` (in chat) - Send message
-- `Enter` (in page input) - Jump to page number
 
 ### Troubleshooting
 
@@ -205,36 +204,6 @@ npm run preview
 - Delete `node_modules` and `package-lock.json`, then run `npm install` again
 - Ensure you're using Node.js v16 or higher
 
-## 📁 Project Structure
-
-```
-insight-loop/
-├── src/
-│   ├── components/
-│   │   ├── ExplanationPopup.jsx    # Modal for recording explanations
-│   │   ├── MessageBubble.jsx       # Chat message component
-│   │   ├── PDFCanvas.jsx           # PDF rendering canvas
-│   │   ├── PDFNavigation.jsx       # Page navigation controls
-│   │   ├── PDFViewerHeader.jsx     # Header with zoom controls
-│   │   └── TutorPanel.jsx          # AI tutor chat interface
-│   ├── pages/
-│   │   ├── UploadPage.jsx          # PDF upload interface
-│   │   └── SlidesPage.jsx          # Main learning page with PDF viewer
-│   ├── store/
-│   │   └── pdfStore.js             # Zustand state management
-│   ├── utils/
-│   │   └── audioUtils.js           # Voice processing utilities
-│   ├── App.jsx                     # Main app component with routing
-│   ├── main.jsx                    # React entry point
-│   └── index.css                   # Global styles and Tailwind imports
-├── index.html                      # HTML entry point
-├── package.json                    # Project dependencies and scripts
-├── vite.config.js                  # Vite configuration
-├── tailwind.config.js              # Tailwind CSS configuration
-├── postcss.config.js               # PostCSS configuration
-└── README.md                       # This file
-```
-
 ## 🛠️ Technology Stack
 
 - **Frontend Framework**: React 18
@@ -246,17 +215,6 @@ insight-loop/
 - **Build Tool**: Vite
 - **Package Manager**: npm
 
-## 📝 Notes
-
-- The application runs entirely client-side - no backend server required
-- PDF files are processed locally in the browser
-- Voice recordings are analyzed in real-time using browser APIs
-- All data remains on your local machine (no cloud storage)
-
 ## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
-
----
-
-Built with ❤️ for enhanced learning experiences

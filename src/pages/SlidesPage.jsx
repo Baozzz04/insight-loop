@@ -8,6 +8,7 @@ import PDFNavigation from '../components/PDFNavigation';
 import TutorPanel from '../components/TutorPanel';
 import ExplanationPopup from '../components/ExplanationPopup';
 import { convertToWav, detectSilenceInWav, detectPitch, analyzePitchContour } from '../utils/audioUtils';
+import { getMessages, saveMessage, getProgress, saveProgress } from '../utils/db';
 
 // Configure PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
@@ -20,7 +21,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.j
  */
 const SlidesPage = () => {
   const navigate = useNavigate();
-  const { pdfFile, pdfFileName } = usePdfStore();
+  const { pdfFile, pdfFileName, documentId, clearPdfFile } = usePdfStore();
   const canvasRef = useRef(null);
   
   const [numPages, setNumPages] = useState(null);
@@ -36,6 +37,7 @@ const SlidesPage = () => {
   const [isConfused, setIsConfused] = useState(false); // Track if user is confused (silence > 40%)
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(true); // Track if messages are being loaded
   const recordingIntervalRef = useRef(null);
   const waveformIntervalRef = useRef(null);
   const [waveformHeights, setWaveformHeights] = useState(Array(20).fill(20));
@@ -56,7 +58,7 @@ const SlidesPage = () => {
     }
   }, [pdfFile, navigate]);
 
-  // Load PDF document
+  // Load PDF document, progress, and chat messages
   useEffect(() => {
     const loadPdf = async () => {
       if (!pdfFile) return;
@@ -68,7 +70,43 @@ const SlidesPage = () => {
         const pdf = await loadingTask.promise;
         setPdfDoc(pdf);
         setNumPages(pdf.numPages);
-        setCurrentPage(1);
+
+        // Load saved progress and messages if documentId exists
+        if (documentId) {
+          try {
+            setIsLoadingMessages(true);
+            // Load progress
+            const savedProgress = await getProgress(documentId);
+            if (savedProgress) {
+              setCurrentPage(savedProgress.currentPage);
+              setVisitedPages(savedProgress.visitedPages);
+            } else {
+              setCurrentPage(1);
+              setVisitedPages(new Set([1]));
+            }
+
+            // Load messages
+            const savedMessages = await getMessages(documentId);
+            if (savedMessages && savedMessages.length > 0) {
+              setMessages(savedMessages.map(msg => ({
+                text: msg.text,
+                type: msg.type
+              })));
+            }
+            // Note: Welcome message is handled by the useEffect below to avoid duplicates
+          } catch (error) {
+            console.error('Error loading saved data:', error);
+            // Continue with default values if loading fails
+            setCurrentPage(1);
+            setVisitedPages(new Set([1]));
+          } finally {
+            setIsLoadingMessages(false);
+          }
+        } else {
+          setCurrentPage(1);
+          setVisitedPages(new Set([1]));
+          setIsLoadingMessages(false);
+        }
       } catch (error) {
         console.error('Error loading PDF:', error);
         setPdfDoc(null);
@@ -79,7 +117,7 @@ const SlidesPage = () => {
     };
 
     loadPdf();
-  }, [pdfFile]);
+  }, [pdfFile, documentId]);
 
   // Render current page
   useEffect(() => {
@@ -224,13 +262,22 @@ const SlidesPage = () => {
   };
 
   // Helper function to add messages (can be called from voice transcription or tutor responses)
-  const addMessage = (text, type = 'tutor') => {
+  const addMessage = async (text, type = 'tutor') => {
     const newMessage = {
       text,
       type, // 'tutor' or 'user'
       timestamp: new Date(),
     };
     setMessages(prev => [...prev, newMessage]);
+
+    // Save message to IndexedDB if documentId exists
+    if (documentId) {
+      try {
+        await saveMessage(documentId, text, type);
+      } catch (error) {
+        console.error('Error saving message:', error);
+      }
+    }
   };
 
   // Extract text content from a PDF page
@@ -575,13 +622,38 @@ const SlidesPage = () => {
     }
   };
 
-  // Example: Add a welcome message when PDF loads (can be removed or modified)
+  // Save progress whenever currentPage or visitedPages changes
   useEffect(() => {
-    if (pdfDoc && messages.length === 0) {
-      addMessage(`Welcome! I'm here to help you learn from ${pdfFileName}. I will help you to study this content as fast as possible.`, 'tutor');
+    if (documentId && currentPage && visitedPages.size > 0) {
+      const saveProgressData = async () => {
+        try {
+          await saveProgress(documentId, {
+            currentPage,
+            visitedPages
+          });
+        } catch (error) {
+          console.error('Error saving progress:', error);
+        }
+      };
+      saveProgressData();
+    }
+  }, [documentId, currentPage, visitedPages]);
+
+  // Add a welcome message when PDF loads (only if no messages exist yet and loading is complete)
+  useEffect(() => {
+    if (pdfDoc && messages.length === 0 && !isLoadingMessages) {
+      // Check if welcome message doesn't already exist to prevent duplicates
+      const hasWelcomeMessage = messages.some(msg => 
+        msg.text && msg.text.includes('Welcome! I\'m here to help you learn')
+      );
+      
+      if (!hasWelcomeMessage) {
+        // Add welcome message if no messages exist and we've finished loading
+        addMessage(`Welcome! I'm here to help you learn from ${pdfFileName}. I will help you to study this content as fast as possible.`, 'tutor');
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pdfDoc]);
+  }, [pdfDoc, isLoadingMessages, messages.length]);
 
   if (!pdfFile) {
     return null; // Will redirect via useEffect
@@ -599,7 +671,10 @@ const SlidesPage = () => {
                 pdfFileName={pdfFileName}
                 scale={scale}
                 isRendering={isRendering}
-                onBack={() => navigate('/')}
+                onBack={() => {
+                  clearPdfFile();
+                  navigate('/');
+                }}
                 onZoomIn={handleZoomIn}
                 onZoomOut={handleZoomOut}
                 onZoomReset={handleZoomReset}

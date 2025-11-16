@@ -16,13 +16,18 @@ const usePdfStore = create((set) => ({
   // PDF file name for display purposes
   pdfFileName: null,
 
+  // Document ID from IndexedDB
+  documentId: null,
+
   /**
    * Set the PDF file in the store
    * @param {File} file - The PDF file to store
+   * @param {number} documentId - Optional document ID from IndexedDB
    */
-  setPdfFile: (file) => set({ 
+  setPdfFile: (file, documentId = null) => set({ 
     pdfFile: file,
-    pdfFileName: file?.name || null
+    pdfFileName: file?.name || null,
+    documentId: documentId
   }),
 
   /**
@@ -30,7 +35,8 @@ const usePdfStore = create((set) => ({
    */
   clearPdfFile: () => set({ 
     pdfFile: null,
-    pdfFileName: null
+    pdfFileName: null,
+    documentId: null
   }),
 }));
 
