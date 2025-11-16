@@ -1,220 +1,99 @@
 # InsightLoop
 
-InsightLoop is an interactive PDF learning platform that combines intelligent voice analysis with an AI-powered tutor to help students learn more effectively from educational materials. The platform provides real-time confusion detection, personalized explanations, and interactive learning sessions through voice-based interaction.
+Real-time, edge-AI agent tutoring that listens to you and responds instantly
 
-## 🎯 Application Description
+## Application Description
+InsightLoop helps students learn from PDFs by combining speech explanations with slide context. Students record a short explanation; the app transcribes it locally (Whisper), analyzes silence, pitch, and speaking rate for signs of uncertainty, and uses a local LLM (Nexa) to semantically compare the explanation with the slide’s key concepts. If understanding is correct, the student advances; if not, the tutor highlights what was right, what’s missing, and gives targeted feedback—fully on-device friendly and fast to iterate.
 
-InsightLoop is a modern web application designed to revolutionize how students learn from PDF documents. Key features include:
+## Author Information
 
-- **Interactive PDF Viewer**: Upload and view PDF documents with page-by-page navigation, zoom controls, and keyboard shortcuts
-- **Voice-Based Learning**: Record voice explanations of concepts with real-time waveform visualization
-- **Intelligent Confusion Detection**: Advanced algorithms analyze voice patterns (silence detection and pitch contour analysis) to detect when users are confused or uncertain
-- **AI Tutor Panel**: Interactive chat interface for asking questions and receiving guidance
-- **Smart Learning Flow**: Automatically prompts for explanations on new pages and when confusion is detected
-- **Text Extraction**: Extracts text content from PDF pages for contextual learning support
+| Name | Email |
+| :-- | :-- |
+| **Bao Nguyen** | [nnbao04@gmail.com](mailto:nnbao04@gmail.com) |
+| **Giap Nguyen** | [giaptomhoang@gmail.com](mailto:giaptomhoang@gmail.com) |
 
-The platform uses WebRTC Voice Activity Detection (VAD) and pitch analysis to understand user comprehension levels, enabling personalized learning experiences that adapt to individual needs.
+This project has:
+- Frontend (React + Vite)
+- Real‑time confusion detection (silence analysis, pitch variation, and speaking rate)
+- Whisper transcription backend (FastAPI, ONNX Runtime QNN/NPU)
+- Nexa local LLM (Desktop + CLI) with a small FastAPI proxy
 
-## 👥 Team Members
+## Frontend
 
-**Eligible Individuals on the Team:**
-
-- **Bao Nguyen** - Email: nnbao04@gmail.com
-- **Giap Nguyen** - Email: giapnguyen@gmail.com
-
-## 🚀 Setup Instructions from Scratch
-
-### Prerequisites
-
-Before you begin, ensure you have the following installed on your system:
-
-- **Node.js** (v16.0.0 or higher) - [Download Node.js](https://nodejs.org/)
-- **npm** (comes with Node.js) or **yarn** package manager
-
-To verify your installation, run:
-```bash
-node --version
-npm --version
-```
-
-### Installation Steps
-
-1. **Clone or navigate to the project directory:**
-   ```bash
-   cd /path/to/insight-loop
-   ```
-
-2. **Install all project dependencies:**
-   ```bash
-   npm install
-   ```
-   
-   This will install all required packages including:
-   - React 18.2.0
-   - React Router DOM 6.20.0
-   - Zustand (state management)
-   - PDF.js (PDF rendering)
-   - WebRTC VAD (voice activity detection)
-   - Tailwind CSS (styling)
-   - Vite (build tool)
-
-3. **Verify installation:**
-   Ensure that the `node_modules` directory has been created and all dependencies are installed without errors.
-
-### Dependencies
-
-The project includes the following key dependencies:
-
-**Runtime Dependencies:**
-- `react` (^18.2.0) - React library for building user interfaces
-- `react-dom` (^18.2.0) - React DOM rendering
-- `react-router-dom` (^6.20.0) - Client-side routing
-- `zustand` (^4.4.7) - Lightweight state management
-- `pdfjs-dist` (^3.11.174) - PDF.js library for PDF rendering
-- `@ricky0123/vad-web` (^0.0.29) - WebRTC Voice Activity Detection
-
-**Development Dependencies:**
-- `vite` (^5.0.8) - Fast build tool and development server
-- `@vitejs/plugin-react` (^4.2.1) - Vite plugin for React
-- `tailwindcss` (^3.3.6) - Utility-first CSS framework
-- `postcss` (^8.4.32) - CSS post-processor
-- `autoprefixer` (^10.4.16) - CSS vendor prefixing
-- `@types/react` & `@types/react-dom` - TypeScript type definitions
-
-## 💻 Run and Usage Instructions
-
-### Running the Development Server
-
-1. **Start the development server:**
-   ```bash
-   npm run dev
-   ```
-
-2. **Access the application:**
-   - The application will automatically open in your default browser
-   - If not, navigate to the URL shown in the terminal (typically `http://localhost:5173`)
-   - The port may vary if 5173 is already in use
-
-3. **Development server features:**
-   - Hot module replacement (HMR) - changes reflect instantly
-   - Automatic browser refresh on file changes
-   - Source maps for debugging
-
-### Building for Production
-
-To create an optimized production build:
+Requirements: Node.js 18+
 
 ```bash
-npm run build
+npm install
+npm run dev
 ```
 
-This creates a `dist/` directory with optimized and minified files ready for deployment.
+App runs at http://localhost:3000
 
-To preview the production build locally:
 
-```bash
-npm run preview
+## Backend: Whisper (Transcription)
+
+Folder: `ai-hub-apps/apps/windows/python/Whisper`
+
+Follow steps from that README (lines 1–30) then start the API:
+
+```powershell
+# 1) Enable scripts (Admin PowerShell)
+Set-ExecutionPolicy -Scope CurrentUser Unrestricted -Force
+
+# 2) Install platform deps (includes ffmpeg)
+cd ai-hub-apps\apps\windows\python\Whisper
+..\install_platform_deps.ps1 -extra_pkgs ffmpeg
+
+# 3) Re-open Anaconda PowerShell Prompt in this folder
+
+# 4) Create & activate env
+..\activate_venv.ps1 -name AI_Hub
+
+# 5) Run API
+python demo_api.py
 ```
 
-### Usage Instructions
+Transcription endpoint: `POST http://localhost:8000/transcribe-blob`
 
-#### 1. **Upload a PDF Document**
 
-- On the home page, either:
-  - **Drag and drop** a PDF file into the upload area, or
-  - Click **"browse files"** to select a PDF from your computer
-- Supported files: PDF format only
-- Maximum file size: 50MB
-- Once uploaded, a preview of the first page will appear
-- Click **"Start Learning →"** to begin your session
+## Backend: Nexa LLM
 
-#### 2. **Navigate Through PDF Pages**
+1) Install Nexa Desktop and open the Nexa CLI
+2) (Optional) Check CLI: `nexa -h`
+3) Pull model (NPU): `nexa pull NexaAI/Llama3.2-3B-NPU-Turbo`
+4) Serve API: `nexa serve`  (OpenAI‑compatible on `http://127.0.0.1:18181`)
 
-**Navigation Methods:**
-- **Page Controls**: Use the Previous/Next buttons at the bottom
-- **Keyboard Shortcuts**:
-  - `←` or `↑` - Previous page
-  - `→` or `↓` - Next page
-- **Direct Page Input**: Type the page number in the input field and press Enter
 
-**Zoom Controls:**
-- Click the `+` button to zoom in
-- Click the `-` button to zoom out
-- Click the reset icon to return to default zoom (2.0x)
+## Chat Proxy API (FastAPI)
 
-#### 3. **Learning Session Workflow**
+Folder: `local-agent`
 
-**For New Pages:**
-- When navigating to a page you haven't visited, a popup will appear
-- You'll be prompted to explain the concept on that page
-- Click **"Start Recording"** to begin your voice explanation
-- Speak clearly while explaining the concept
-- Click **"Stop Recording"** when finished (or it will auto-stop after 2 minutes)
-- The system analyzes your explanation for comprehension
-- If you demonstrate good understanding, you'll automatically move to the next page
-- If confusion is detected, you'll stay on the current page and receive clarification prompts
+```powershell
+cd local-agent
+python chat_api.py
+```
 
-**Confusion Detection:**
-- The system monitors your voice for:
-  - Silence percentage (pauses in speech)
-  - Pitch contour patterns (vocal uncertainty)
-- If confusion is detected, the AI tutor will ask specific clarifying questions
-- You can choose to:
-  - Ask questions via the chat panel
-  - Try explaining again
-  - Navigate away manually
+Endpoints:
+- `GET /` – health
+- `POST /chat` – body `{ question, slideContent }` → `{ response, debug }`
 
-#### 4. **AI Tutor Panel**
 
-**Located on the right side of the screen:**
-- **Chat Interface**: Type questions in the input field and press Enter
-- **Message History**: View your conversation with the AI tutor
-- **Voice Waveform**: Visual feedback when recording (animated bars)
+## Ports
+- Frontend (Vite): 5173
+- Whisper API:     8000
+- Chat API:        8001
+- Nexa Server:     18181
 
-**Tips for Best Results:**
-- Speak clearly and at a moderate pace
-- Minimize background noise when recording
-- Provide complete explanations rather than single words
-- Use the chat feature for specific questions about concepts
 
-#### 5. **Keyboard Shortcuts Summary**
+## Tips / Troubleshooting
+- Windows consoles can throw `charmap` errors for Unicode; we sanitize logs server‑side.
+- First LLM call after model load can be slow; wait or warm up with a short prompt.
+- To free a busy port:
+  ```powershell
+  netstat -ano | findstr :8001
+  taskkill /PID <PID> /F
+  ```
 
-- `←` / `↑` - Navigate to previous page
-- `→` / `↓` - Navigate to next page
-- `Enter` (in chat) - Send message
 
-### Troubleshooting
-
-**Microphone Access Issues:**
-- Ensure your browser has microphone permissions
-- Chrome/Edge recommended for best compatibility
-- Check browser settings: Settings → Privacy → Microphone
-
-**PDF Not Rendering:**
-- Ensure the PDF file is not corrupted
-- Try a different PDF file
-- Check browser console for error messages
-
-**Port Already in Use:**
-- Vite will automatically try the next available port
-- Or specify a port: `npm run dev -- --port 3000`
-
-**Dependencies Installation Issues:**
-- Clear npm cache: `npm cache clean --force`
-- Delete `node_modules` and `package-lock.json`, then run `npm install` again
-- Ensure you're using Node.js v16 or higher
-
-## 🛠️ Technology Stack
-
-- **Frontend Framework**: React 18
-- **Routing**: React Router v6
-- **State Management**: Zustand
-- **PDF Rendering**: PDF.js
-- **Voice Processing**: WebRTC VAD, Web Audio API
-- **Styling**: Tailwind CSS
-- **Build Tool**: Vite
-- **Package Manager**: npm
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
+## License
+MIT

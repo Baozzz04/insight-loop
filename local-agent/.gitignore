@@ -1,0 +1,8 @@
+venv/
+.vscode/
+.DS_Store
+__pycache__/
+*.pyc
+config.yaml
+.pytest_cache/
+transcripts/transcript_*.txt

@@ -1,0 +1,42 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Editor
+**/.vscode
+**/.idea
+
+# Builds
+*build/
+*.gradle/
+**/gradle
+**/gradlew*
+**/*.egg-info
+
+# Model File Formats
+**/*.onnx
+**/*.dlc
+**/*.bin
+**/*.tflite
+**/*.pt
+
+# Coverage
+.coverage
+
+# pyenv
+.python-version
+qaiha-dev
+
+# mypy
+.mypy_cache/
+
+# MacOS
+*.DS_Store
+
+# Hub exports
+**/*.mlmodel
+**/*.tflite
+
+# Other auxiliary assets
+apps/android/ObjectDetection/src/main/assets/labels.txt

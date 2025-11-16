@@ -215,17 +215,23 @@ export const detectSilenceInWav = async (wavBlob) => {
   }
 };
 
-// Detect pitch (fundamental frequency) from frequency data using autocorrelation
-export const detectPitch = (frequencyData, sampleRate) => {
+// Detect pitch (fundamental frequency) from time-domain data using autocorrelation
+export const detectPitch = (timeDomainData, sampleRate) => {
+  // Convert Uint8Array (0-255, centered at 128) to normalized values (-1 to 1)
+  const bufferSize = timeDomainData.length;
+  const normalizedData = new Float32Array(bufferSize);
+  for (let i = 0; i < bufferSize; i++) {
+    normalizedData[i] = (timeDomainData[i] - 128) / 128.0;
+  }
+  
   // Use autocorrelation to find fundamental frequency
-  const bufferSize = frequencyData.length;
-  const correlations = new Array(bufferSize).fill(0);
+  const correlations = new Float32Array(bufferSize);
   
   // Calculate autocorrelation
   for (let lag = 0; lag < bufferSize; lag++) {
     let sum = 0;
     for (let i = 0; i < bufferSize - lag; i++) {
-      sum += frequencyData[i] * frequencyData[i + lag];
+      sum += normalizedData[i] * normalizedData[i + lag];
     }
     correlations[lag] = sum;
   }
@@ -234,7 +240,8 @@ export const detectPitch = (frequencyData, sampleRate) => {
   let maxCorrelation = -1;
   let bestLag = -1;
   
-  // Start from lag 20 to skip the DC component (typical voice is 80-400Hz)
+  // Typical voice range is 80-400Hz
+  // Calculate lag range based on sample rate
   const minLag = Math.floor(sampleRate / 400); // 400 Hz max
   const maxLag = Math.floor(sampleRate / 80);  // 80 Hz min
   
@@ -245,22 +252,24 @@ export const detectPitch = (frequencyData, sampleRate) => {
     }
   }
   
-  if (bestLag === -1) return 0; // No pitch detected
+  if (bestLag === -1 || maxCorrelation < 0.01) return 0; // No pitch detected
   
   // Convert lag to frequency
   const pitch = sampleRate / bestLag;
   return pitch;
 };
 
-// Analyze pitch contour for confusion (pitch upshift detection)
+// Analyze pitch contour for confusion (pitch variation detection)
+// People who are uncertain/lying tend to have higher pitch variation
 export const analyzePitchContour = (pitchData) => {
   if (pitchData.length < 2) {
     return {
       upshiftScore: 0,
       avgPitch: 0,
-      pitchSlope: 0,
-      pitchVariability: 0,
-      pitchTrend: 'stable'
+      minPitch: 0,
+      maxPitch: 0,
+      pitchRange: 0,
+      pitchVariability: 0
     };
   }
   
@@ -270,50 +279,42 @@ export const analyzePitchContour = (pitchData) => {
     return {
       upshiftScore: 0,
       avgPitch: 0,
-      pitchSlope: 0,
-      pitchVariability: 0,
-      pitchTrend: 'stable'
+      minPitch: 0,
+      maxPitch: 0,
+      pitchRange: 0,
+      pitchVariability: 0
     };
   }
   
-  // Calculate pitch slope (overall trend)
-  const startPitches = validPitches.slice(0, Math.ceil(validPitches.length / 3));
-  const endPitches = validPitches.slice(-Math.ceil(validPitches.length / 3));
-  
-  const avgStartPitch = startPitches.reduce((sum, p) => sum + p, 0) / startPitches.length;
-  const avgEndPitch = endPitches.reduce((sum, p) => sum + p, 0) / endPitches.length;
+  // Calculate min, max, and average pitch
+  const minPitch = Math.min(...validPitches);
+  const maxPitch = Math.max(...validPitches);
   const avgPitch = validPitches.reduce((sum, p) => sum + p, 0) / validPitches.length;
   
-  const pitchSlope = avgEndPitch - avgStartPitch;
+  // Calculate pitch range (highest - lowest frequency)
+  // This indicates nervousness/uncertainty
+  const pitchRange = maxPitch - minPitch;
   
-  // Calculate pitch variance (instability indicator)
-  const mean = validPitches.reduce((sum, p) => sum + p, 0) / validPitches.length;
-  const variance = validPitches.reduce((sum, p) => sum + Math.pow(p - mean, 2), 0) / validPitches.length;
-  const stdDev = Math.sqrt(variance);
+  // Normalize pitch range to a 0-1 score
+  // Normal speech: ~20-40 Hz variation (low uncertainty)
+  // Nervous/uncertain: 60-100+ Hz variation (high uncertainty)
+  // Formula: variation score increases with pitch range
+  const normalizedRange = Math.min(pitchRange / 80, 1); // 80 Hz as max expected range
   
-  // Calculate coefficient of variation (CV) - normalized variability
-  const cv = stdDev / mean;
+  // Calculate variability as percentage of average pitch
+  const pitchVariabilityPercent = (pitchRange / avgPitch) * 100;
   
-  // Upshift score (0-1): combination of positive slope and high variability
-  // Pitch upshift suggests uncertainty/questioning
-  const upshiftScore = Math.max(0, Math.min(1, 
-    (pitchSlope > 0 ? 0.6 : 0) + (cv > 0.1 ? 0.4 * Math.min(cv / 0.2, 1) : 0)
-  ));
-  
-  // Determine pitch trend
-  let pitchTrend = 'stable';
-  if (pitchSlope > 10) {
-    pitchTrend = 'rising (uncertainty)';
-  } else if (pitchSlope < -10) {
-    pitchTrend = 'falling';
-  }
+  // upshiftScore is the confusion/uncertainty score (0-1)
+  // Higher pitch variation = more confused/uncertain
+  const upshiftScore = Math.max(0, Math.min(1, normalizedRange));
   
   return {
     upshiftScore,
     avgPitch: avgPitch.toFixed(0),
-    pitchSlope: pitchSlope.toFixed(1),
-    pitchVariability: (cv * 100).toFixed(1),
-    pitchTrend
+    minPitch: minPitch.toFixed(0),
+    maxPitch: maxPitch.toFixed(0),
+    pitchRange: pitchRange.toFixed(1),
+    pitchVariability: pitchVariabilityPercent.toFixed(1)
   };
 };
 

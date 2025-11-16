@@ -1,8 +1,13 @@
+import TypingIndicator from './TypingIndicator';
+
 /**
  * MessageBubble Component
  * Displays individual chat messages (tutor or user)
  */
 const MessageBubble = ({ message }) => {
+  // Check if this is a typing indicator message
+  const isTyping = message.text === '...' && message.type === 'tutor';
+  
   return (
     <div className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
       <div
@@ -22,10 +27,21 @@ const MessageBubble = ({ message }) => {
             <span className="text-xs font-semibold text-blue-600">InsightLoop</span>
           </div>
         )}
-        <p className={`text-sm ${message.type === 'user' ? 'text-white' : 'text-gray-800'}`}>
-          {message.text}
-        </p>
-        {message.timestamp && (
+        
+        {/* Show typing indicator or regular text */}
+        {isTyping ? (
+          <TypingIndicator />
+        ) : (
+          <p
+            className={`text-sm ${
+              message.type === 'user' ? 'text-white' : 'text-gray-800'
+            } ${message.type === 'tutor' ? 'whitespace-pre-line' : ''}`}
+          >
+            {message.text}
+          </p>
+        )}
+        
+        {message.timestamp && !isTyping && (
           <p className={`text-xs mt-1 ${message.type === 'user' ? 'text-blue-100' : 'text-gray-500'}`}>
             {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </p>

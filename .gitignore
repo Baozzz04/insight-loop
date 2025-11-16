@@ -23,3 +23,32 @@ dist-ssr
 *.sln
 *.sw?
 
+# Env and cache
+.env
+.env.*
+.cache/
+.turbo/
+coverage/
+.nyc_output/
+
+# Python (root-level, backends)
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+
+# Large media artifacts (don’t commit recordings)
+*.wav
+*.webm
+*.mp3
+*.mp4
+
+# Model/checkpoint artifacts at repo root (avoid accidental commits)
+*.onnx
+*.pt
+*.tflite
+*.dlc
+
