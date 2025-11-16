@@ -18,6 +18,15 @@ This project has:
 - Whisper transcription backend (FastAPI, ONNX Runtime QNN/NPU)
 - Nexa local LLM (Desktop + CLI) with a small FastAPI proxy
 
+## Implementation
+This app was built for the Snapdragon X Elite but designed to be platform agnostic. Performance may vary on other hardware.
+
+Machine: Microsoft Surface Laptop, 7th Edition
+Chip: Snapdragon X Elite
+OS: Windows 11 
+Memory: 32 GB
+Python Version: 3.13.9 (ARM)
+
 ## Frontend
 
 Requirements: Node.js 18+
